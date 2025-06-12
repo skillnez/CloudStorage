@@ -1,9 +1,14 @@
 package com.skillnez.cloudstorage.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
 
 @Entity
 @Table(name = "users")
+@Getter
+@Setter
+@RequiredArgsConstructor
+@NoArgsConstructor
 public class User {
 
     @Id
