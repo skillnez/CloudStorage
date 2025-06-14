@@ -20,4 +20,30 @@
             </column>
         </createTable>
     </changeSet>
+    <changeSet id="add-roles-column" author="admin">
+        <addColumn tableName="users">
+            <column name="roles" type="varchar(255)" defaultValue="ROLE_USER"/>
+            <column name="accountNonExpired" type="boolean" />
+            <column name="credentialsNonExpired" type="boolean" />
+            <column name="accountNonLocked" type="boolean" />
+        </addColumn>
+    </changeSet>
+    <changeSet id="add-user-roles-table" author="admin">
+        <createTable tableName="user_roles">
+            <column name="user_id" type="bigint">
+            <constraints nullable="false" />
+            </column>
+            <column name="roles" type="varchar(255)">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="user_roles" baseColumnNames="user_id"
+                                 referencedTableName="users"
+                                 referencedColumnNames="id"  constraintName="foreign-key-constraint"/>
+    </changeSet>
+    <changeSet id="rename-columns" author="admin">
+        <renameColumn tableName="users" oldColumnName="accountNonExpired" newColumnName="account_non_expired" />
+        <renameColumn tableName="users" oldColumnName="credentialsNonExpired" newColumnName="credentials_non_expired" />
+        <renameColumn tableName="users" oldColumnName="accountNonLocked" newColumnName="account_non_locked" />
+    </changeSet>
 </databaseChangeLog>

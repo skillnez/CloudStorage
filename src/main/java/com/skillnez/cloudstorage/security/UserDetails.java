@@ -1,51 +1,51 @@
 package com.skillnez.cloudstorage.security;
 
 import com.skillnez.cloudstorage.entity.User;
+import com.skillnez.cloudstorage.repository.UserRepository;
+import com.skillnez.cloudstorage.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.List;
 
-public class UserDetails implements org.springframework.security.core.userdetails.UserDetails {
+@Service
+@Transactional
+public class UserDetails implements UserDetailsService {
 
-    private final User user;
+    private final UserRepository userRepository;
 
-    public UserDetails(User user) {
-        this.user = user;
+    @Autowired
+    public UserDetails(UserRepository userRepository) {
+        this.userRepository = userRepository;
     }
 
     @Override
-    public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+    public org.springframework.security.core.userdetails.UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User user = userRepository.findByUsername(username);
+        if (user == null) {
+            throw new UsernameNotFoundException("User with username " + username + " not found");
+        }
+        return new org.springframework.security.core.userdetails.User
+                (user.getUsername(),
+                user.getPassword(),
+                user.isEnabled(),
+                user.isAccountNonExpired(),
+                user.isCredentialsNonExpired(),
+                user.isAccountNonLocked(),
+                getAuthorities(user.getRoles()));
     }
 
-    @Override
-    public String getPassword() {
-        return this.user.getPassword();
-    }
-
-    @Override
-    public String getUsername() {
-        return this.user.getUsername();
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return org.springframework.security.core.userdetails.UserDetails.super.isAccountNonExpired();
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return org.springframework.security.core.userdetails.UserDetails.super.isAccountNonLocked();
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return org.springframework.security.core.userdetails.UserDetails.super.isCredentialsNonExpired();
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return this.user.isEnabled();
+    private static List<GrantedAuthority> getAuthorities (List<String> roles) {
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        for (String role : roles) {
+            authorities.add(new SimpleGrantedAuthority(role));
+        }
+        return authorities;
     }
 }
