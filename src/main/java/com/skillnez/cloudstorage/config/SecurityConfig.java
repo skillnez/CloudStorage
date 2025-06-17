@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -39,7 +40,7 @@ public class SecurityConfig {
                         // Открыты любые ресурсы React (статика)
                         .requestMatchers("/", "/index.html", "/static/**", "/favicon.ico", "/manifest.json").permitAll()
                         // Открыты эндпоинты регистрации и логина
-                        .requestMatchers("/api/auth/sign-in", "/api/auth/sign-up").permitAll()
+                        .requestMatchers("/api/auth/sign-in", "/api/auth/sign-up", "/api/user/me").permitAll()
                         // Остальные /api/** требуют авторизации
                         .requestMatchers("/api/**").authenticated()
                         // Остальное тоже разрешить (чтобы React router работал, если у тебя есть fallback controller)
@@ -54,7 +55,7 @@ public class SecurityConfig {
                         .logoutSuccessHandler((req, res, auth) -> res.setStatus(HttpServletResponse.SC_NO_CONTENT))
                 )
                 // 5. Разрешить CORS, если фронт отдельно
-                //.cors(Customizer.withDefaults())
+//                .cors(Customizer.withDefaults())
                 // 6. Политика сессий (по умолчанию, или можешь явно указать)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)

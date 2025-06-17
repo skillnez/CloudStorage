@@ -49,6 +49,7 @@ public class AuthController {
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
         request.getSession(true);
+        request.getSession().setAttribute("username", registrationRequestDto.getUsername());
         return ResponseEntity.ok(Map.of("username", registrationRequestDto.getUsername()));
         //todo добавь @Valid и обработку ошибок из DTO и exception
     }
