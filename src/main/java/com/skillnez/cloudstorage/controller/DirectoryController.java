@@ -9,10 +9,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -28,11 +28,17 @@ public class DirectoryController {
         this.fileSystemService = fileSystemService;
     }
 
+//    @GetMapping
+//    public ResponseEntity<?> getStorageInfo(@AuthenticationPrincipal UserDetails user, @RequestParam String path) {
+//        List<StorageInfoResponseDto> elementsInFolder = new ArrayList<>();
+//        String normalizedPath = PathFactory.normalizeFolderPath(path);
+//    }
+
     @PostMapping("/directory")
     public ResponseEntity<?> createFolder(@AuthenticationPrincipal UserDetails user, @RequestParam String path) {
         String normalizedPath = PathFactory.normalizeFolderPath(path);
         String visiblePath = PathFactory.getVisiblePath(normalizedPath);
-        String fullNormalizedPath = PathFactory.addUserScopedPrefixForFolderCreation(user.getUsername(), normalizedPath);
+        String fullNormalizedPath = PathFactory.addUserScopedPrefix(user.getUsername(), normalizedPath);
         fileSystemService.checkParentFolders(fullNormalizedPath);
         fileSystemService.createFolder(fullNormalizedPath);
         return ResponseEntity.ok(new StorageInfoResponseDto

@@ -1,5 +1,6 @@
 package com.skillnez.cloudstorage.service;
 
+import com.skillnez.cloudstorage.exception.BadPathFormatException;
 import com.skillnez.cloudstorage.exception.FolderAlreadyExistsException;
 import com.skillnez.cloudstorage.exception.MinioOperationException;
 import com.skillnez.cloudstorage.exception.NoParentFolderException;
@@ -27,16 +28,19 @@ public class FileSystemService {
         this.minioClient = minioClient;
     }
 
-    public void createFolder (String path) {
+    public void createFolder (String fullNormalizedPath) {
+        if (!fullNormalizedPath.endsWith("/")){
+            throw new BadPathFormatException("folder name must end with /");
+        }
         try {
             minioClient.putObject(PutObjectArgs.builder()
                     .bucket(bucketName)
-                    .object(path)
+                    .object(fullNormalizedPath)
                     .stream(new ByteArrayInputStream(new byte[0]), 0, 0)
                     .contentType("application/octet-stream")
                     .build());
         } catch (IOException | GeneralSecurityException | MinioException e) {
-            throw new MinioOperationException("folder creation error: " + path, e);
+            throw new MinioOperationException("folder creation error: " + fullNormalizedPath, e);
         }
     }
 
@@ -53,7 +57,7 @@ public class FileSystemService {
 
     private void checkFolderAlreadyExists (String fullNormalizedPath) {
         if (hasAnyFolderWithPrefix(fullNormalizedPath)) {
-            throw new FolderAlreadyExistsException("folder already exists: " + fullNormalizedPath);
+            throw new FolderAlreadyExistsException("file or folder already exists: " + fullNormalizedPath);
         }
     }
 
@@ -67,7 +71,7 @@ public class FileSystemService {
         for (int i = 0; i < pathPrefix.length - 1; i++) {
                 String currentPath = stringBuilder.append(pathPrefix[i]).append("/").toString();
                 if (!hasAnyFolderWithPrefix(currentPath)) {
-                    throw new NoParentFolderException("there's no folder with prefix: " + currentPath);
+                    throw new NoParentFolderException("path does not exist");
                 }
         }
     }
