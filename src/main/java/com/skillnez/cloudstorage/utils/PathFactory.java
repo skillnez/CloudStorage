@@ -6,23 +6,20 @@ public class PathFactory {
 
     private static final String EMPTY_STRING = "";
 
-    public static String addUserScopedPrefix(String username, String normalizedPath) {
-        return String.format("%s/%s", username, normalizedPath);
+    public static String addUserScopedPrefix(Long id, String normalizedPath) {
+        return String.format("user-%s-files/%s", id, normalizedPath);
+    }
+
+    public static String removeUserScopedPrefix(String username, String fullNormalizedPath) {
+        return fullNormalizedPath.replaceFirst(username+"/", EMPTY_STRING);
     }
 
     public static String getFileOrFolderName (String normalizedPath) {
         String[] pathPrefix = normalizedPath.split("/");
-        return pathPrefix[pathPrefix.length - 1];
-    }
-
-    public static String getVisiblePath(String normalizedPath) {
-        String cleaned = normalizedPath.replaceAll("/+$", "");
-        int idx = cleaned.lastIndexOf('/');
-        if (idx == -1) {
-            return ""; // Корень
-        } else {
-            return cleaned.substring(0, idx + 1); // Включительно со слэшем
+        if (normalizedPath.endsWith("/")) {
+            return pathPrefix[pathPrefix.length - 1] + "/";
         }
+        return pathPrefix[pathPrefix.length - 1];
     }
 
     public static String normalizeFolderPath(String rawPath) {

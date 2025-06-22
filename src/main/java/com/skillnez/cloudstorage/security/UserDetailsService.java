@@ -1,12 +1,11 @@
 package com.skillnez.cloudstorage.security;
 
 import com.skillnez.cloudstorage.entity.User;
+import com.skillnez.cloudstorage.entity.CustomUserDetails;
 import com.skillnez.cloudstorage.repository.UserRepository;
-import com.skillnez.cloudstorage.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,23 +15,24 @@ import java.util.List;
 
 @Service
 @Transactional
-public class UserDetails implements UserDetailsService {
+public class UserDetailsService implements org.springframework.security.core.userdetails.UserDetailsService {
 
     private final UserRepository userRepository;
 
     @Autowired
-    public UserDetails(UserRepository userRepository) {
+    public UserDetailsService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
     @Override
-    public org.springframework.security.core.userdetails.UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public CustomUserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username);
         if (user == null) {
             throw new UsernameNotFoundException("User with username " + username + " not found");
         }
-        return new org.springframework.security.core.userdetails.User
-                (user.getUsername(),
+        return new CustomUserDetails(
+                user.getId(),
+                user.getUsername(),
                 user.getPassword(),
                 user.isEnabled(),
                 user.isAccountNonExpired(),

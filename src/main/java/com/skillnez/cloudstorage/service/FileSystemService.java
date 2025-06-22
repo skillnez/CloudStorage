@@ -1,9 +1,12 @@
 package com.skillnez.cloudstorage.service;
 
+import com.skillnez.cloudstorage.dto.ResourceType;
+import com.skillnez.cloudstorage.dto.StorageInfoResponseDto;
 import com.skillnez.cloudstorage.exception.BadPathFormatException;
 import com.skillnez.cloudstorage.exception.FolderAlreadyExistsException;
 import com.skillnez.cloudstorage.exception.MinioOperationException;
 import com.skillnez.cloudstorage.exception.NoParentFolderException;
+import com.skillnez.cloudstorage.utils.PathFactory;
 import io.minio.*;
 import io.minio.errors.*;
 import io.minio.messages.Item;
@@ -14,6 +17,8 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class FileSystemService {
@@ -36,7 +41,7 @@ public class FileSystemService {
             minioClient.putObject(PutObjectArgs.builder()
                     .bucket(bucketName)
                     .object(fullNormalizedPath)
-                    .stream(new ByteArrayInputStream(new byte[0]), 0, 0)
+                    .stream(new ByteArrayInputStream(new byte[] {}), 0, -1)
                     .contentType("application/octet-stream")
                     .build());
         } catch (IOException | GeneralSecurityException | MinioException e) {
@@ -55,14 +60,19 @@ public class FileSystemService {
         return items.iterator().hasNext();
     }
 
-    private void checkFolderAlreadyExists (String fullNormalizedPath) {
+    public void checkFolderAlreadyExists (String fullNormalizedPath) {
         if (hasAnyFolderWithPrefix(fullNormalizedPath)) {
             throw new FolderAlreadyExistsException("file or folder already exists: " + fullNormalizedPath);
         }
     }
 
+    public void checkFolderExists (String fullNormalizedPath) {
+        if (!hasAnyFolderWithPrefix(fullNormalizedPath)) {
+            throw new NoParentFolderException("folder does not exist: " + fullNormalizedPath);
+        }
+    }
+
     public void checkParentFolders(String fullNormalizedPath) {
-        checkFolderAlreadyExists(fullNormalizedPath);
         String[] pathPrefix = fullNormalizedPath.split("/");
         if (pathPrefix.length <= 2) {
             return;
@@ -75,4 +85,32 @@ public class FileSystemService {
                 }
         }
     }
+
+    public List<StorageInfoResponseDto> getElementsInFolder(String fullNormalizedPath) {
+        List<StorageInfoResponseDto> elementsInFolder = new ArrayList<>();
+        Iterable<Result<Item>> results = minioClient.listObjects(
+                ListObjectsArgs.builder()
+                        .bucket(bucketName)
+                        .prefix(fullNormalizedPath)
+                        .recursive(false)
+                        .build()
+        );
+        for (Result<Item> r : results) {
+            try {
+                Item item = r.get();
+                String path = item.objectName();
+                if (path.equals(fullNormalizedPath)) {
+                    continue;
+                }
+                String name = PathFactory.getFileOrFolderName(item.objectName());
+                Long size = (item.objectName().endsWith("/")) ? null : item.size();
+                ResourceType resourceType = (item.objectName().endsWith("/")) ? ResourceType.DIRECTORY : ResourceType.FILE;
+                elementsInFolder.add(new StorageInfoResponseDto(path, name, size, resourceType ));
+            } catch (IOException | GeneralSecurityException | MinioException e) {
+                throw new MinioOperationException("Object listing error: " + fullNormalizedPath, e); //Todo придумай эксепш
+            }
+        }
+        return elementsInFolder;
+    }
+
 }
