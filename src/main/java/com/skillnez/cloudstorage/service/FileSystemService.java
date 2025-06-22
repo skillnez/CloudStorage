@@ -13,6 +13,7 @@ import io.minio.messages.Item;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -107,10 +108,39 @@ public class FileSystemService {
                 ResourceType resourceType = (item.objectName().endsWith("/")) ? ResourceType.DIRECTORY : ResourceType.FILE;
                 elementsInFolder.add(new StorageInfoResponseDto(path, name, size, resourceType ));
             } catch (IOException | GeneralSecurityException | MinioException e) {
-                throw new MinioOperationException("Object listing error: " + fullNormalizedPath, e); //Todo придумай эксепш
+                throw new MinioOperationException("Object listing error: " + fullNormalizedPath, e);
             }
         }
         return elementsInFolder;
+    }
+
+    public List<StorageInfoResponseDto> upload (String fullNormalizedPath, MultipartFile[] file) {
+        List<StorageInfoResponseDto> uploadedElements = new ArrayList<>();
+        for (MultipartFile fileItem : file) {
+            String fileName = PathFactory.normalizePath(fileItem.getOriginalFilename());
+            int i = 123;
+            String fullNormalizedPathWithFileName = PathFactory.addFilenamePrefix(fullNormalizedPath, fileName);
+            //ну чтобы точно с путем нельзя было накосячить
+            fullNormalizedPathWithFileName = PathFactory.normalizePath(fullNormalizedPathWithFileName);
+            checkFolderAlreadyExists(fullNormalizedPathWithFileName);
+            try {
+                minioClient.putObject(
+                        PutObjectArgs.builder()
+                                .bucket(bucketName)
+                                .object(fullNormalizedPathWithFileName)
+                                .stream(fileItem.getInputStream(), fileItem.getSize(), -1)
+                                .contentType(fileItem.getContentType())
+                                .build()
+                );
+                String name = PathFactory.getFileOrFolderName(fullNormalizedPathWithFileName);
+                Long size = (fullNormalizedPathWithFileName.endsWith("/")) ? null : fileItem.getSize();
+                ResourceType resourceType = (fullNormalizedPathWithFileName.endsWith("/")) ? ResourceType.DIRECTORY : ResourceType.FILE;
+                uploadedElements.add(new StorageInfoResponseDto(fullNormalizedPathWithFileName, name, size, resourceType ));
+            } catch (IOException | GeneralSecurityException | MinioException e) {
+                throw new MinioOperationException("Object upload error: " + fullNormalizedPath, e);
+            }
+        }
+        return uploadedElements;
     }
 
 }

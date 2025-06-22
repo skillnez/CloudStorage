@@ -6,7 +6,6 @@ import com.skillnez.cloudstorage.entity.CustomUserDetails;
 import com.skillnez.cloudstorage.service.FileSystemService;
 import com.skillnez.cloudstorage.utils.PathFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -14,9 +13,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api")
 public class DirectoryController {
-
-    @Value("${minio.bucket-name}")
-    private String bucketName;
 
     private final FileSystemService fileSystemService;
 
@@ -28,14 +24,14 @@ public class DirectoryController {
     @GetMapping("/directory")
     public ResponseEntity<?> getStorageInfo(@AuthenticationPrincipal CustomUserDetails user, @RequestParam String path) {
         String fullPath = PathFactory.addUserScopedPrefix(user.getId(), path);
-        String fullNormalizedPath = PathFactory.normalizeFolderPath(fullPath);
+        String fullNormalizedPath = PathFactory.normalizePath(fullPath);
         fileSystemService.checkFolderExists(fullNormalizedPath);
         return ResponseEntity.ok(fileSystemService.getElementsInFolder(fullNormalizedPath));
     }
 
     @PostMapping("/directory")
     public ResponseEntity<?> createFolder(@AuthenticationPrincipal CustomUserDetails user, @RequestParam String path) {
-        String normalizedPath = PathFactory.normalizeFolderPath(path);
+        String normalizedPath = PathFactory.normalizePath(path);
         String fullNormalizedPath = PathFactory.addUserScopedPrefix(user.getId(), normalizedPath);
         fileSystemService.checkFolderAlreadyExists(fullNormalizedPath);
         fileSystemService.checkParentFolders(fullNormalizedPath);

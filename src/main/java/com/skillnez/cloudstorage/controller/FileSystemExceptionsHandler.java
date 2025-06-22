@@ -10,8 +10,8 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.util.Map;
 
-@RestControllerAdvice(assignableTypes = DirectoryController.class)
-public class DirectoryExceptionHandler {
+@RestControllerAdvice(assignableTypes = {DirectoryController.class, ResourceController.class})
+public class FileSystemExceptionsHandler {
 
     @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity<?> handleNoHandlerFoundException(NoHandlerFoundException e) {

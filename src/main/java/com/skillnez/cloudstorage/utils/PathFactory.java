@@ -10,6 +10,10 @@ public class PathFactory {
         return String.format("user-%s-files/%s", id, normalizedPath);
     }
 
+    public static String addFilenamePrefix(String fullNormalizedPath, String fileName) {
+        return String.format("%s%s", fullNormalizedPath, fileName);
+    }
+
     public static String removeUserScopedPrefix(String username, String fullNormalizedPath) {
         return fullNormalizedPath.replaceFirst(username+"/", EMPTY_STRING);
     }
@@ -22,7 +26,7 @@ public class PathFactory {
         return pathPrefix[pathPrefix.length - 1];
     }
 
-    public static String normalizeFolderPath(String rawPath) {
+    public static String normalizePath(String rawPath) {
         if (rawPath == null || rawPath.isBlank()) {
             throw new BadPathFormatException("path cant be empty");
         }
