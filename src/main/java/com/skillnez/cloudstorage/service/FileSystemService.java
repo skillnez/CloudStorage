@@ -67,9 +67,9 @@ public class FileSystemService {
         }
     }
 
-    public void checkFolderExists (String fullNormalizedPath) {
+    public void checkFolderDoesntExists(String fullNormalizedPath) {
         if (!hasAnyFolderWithPrefix(fullNormalizedPath)) {
-            throw new NoParentFolderException("folder does not exist: " + fullNormalizedPath);
+            throw new NoParentFolderException("folder doesn't exists: " + fullNormalizedPath);
         }
     }
 

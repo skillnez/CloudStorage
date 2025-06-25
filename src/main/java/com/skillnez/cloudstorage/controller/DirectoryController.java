@@ -25,7 +25,7 @@ public class DirectoryController {
     public ResponseEntity<?> getStorageInfo(@AuthenticationPrincipal CustomUserDetails user, @RequestParam String path) {
         String fullPath = PathFactory.addUserScopedPrefix(user.getId(), path);
         String fullNormalizedPath = PathFactory.normalizePath(fullPath);
-        fileSystemService.checkFolderExists(fullNormalizedPath);
+        fileSystemService.checkFolderDoesntExists(fullNormalizedPath);
         return ResponseEntity.ok(fileSystemService.getElementsInFolder(fullNormalizedPath));
     }
 

@@ -17,6 +17,11 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.annotation.web.configurers.LogoutConfigurer;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -38,6 +43,19 @@ public class SecurityConfig {
     }
 
     @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of("http://localhost")); // или http://localhost:80
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
+
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 // 1. CSRF: обычно отключают для REST, или настраивают отдельный фильтр под SPA
@@ -47,11 +65,21 @@ public class SecurityConfig {
                         // Открыты любые ресурсы React (статика)
                         .requestMatchers("/", "/index.html", "/static/**", "/favicon.ico", "/manifest.json").permitAll()
                         // Открыты эндпоинты регистрации и логина
-                        .requestMatchers("/api/auth/sign-in", "/api/auth/sign-up").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/sign-in").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/sign-up").permitAll()
                         // Остальные /api/** требуют авторизации
                         .requestMatchers("/api/**").authenticated()
                         // Остальное тоже разрешить (чтобы React router работал, если у тебя есть fallback controller)
-                        .anyRequest().permitAll()
+                        .requestMatchers(
+                                "/",
+                                "/index.html",
+                                "/config.js",
+                                "/assets/**",
+                                "/login",
+                                "/registration",
+                                "/files/**"
+                        )
+                        .permitAll()
                 )
                 // 3. Отключаем стандартную форму логина и httpBasic (т.к. login через контроллер)
                 .formLogin(AbstractHttpConfigurer::disable)
@@ -61,8 +89,6 @@ public class SecurityConfig {
                         .logoutUrl("/api/auth/sign-out")
                         .logoutSuccessHandler((req, res, auth) -> res.setStatus(HttpServletResponse.SC_NO_CONTENT))
                 )
-                // 5. Разрешить CORS, если фронт отдельно
-                .cors(Customizer.withDefaults())
                 // 6. Политика сессий (по умолчанию, или можешь явно указать)
                 .exceptionHandling(eh -> eh
                         .authenticationEntryPoint((request, response, authException) -> {
@@ -73,7 +99,8 @@ public class SecurityConfig {
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                );
+                )
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()));;
         return http.build();
     }
 
