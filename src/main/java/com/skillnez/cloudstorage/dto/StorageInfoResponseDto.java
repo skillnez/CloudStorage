@@ -2,16 +2,14 @@ package com.skillnez.cloudstorage.dto;
 
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @RequiredArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Builder
 public class StorageInfoResponseDto {
 
     private final String path;

@@ -4,7 +4,8 @@ import com.skillnez.cloudstorage.dto.ResourceType;
 import com.skillnez.cloudstorage.dto.StorageInfoResponseDto;
 import com.skillnez.cloudstorage.entity.CustomUserDetails;
 import com.skillnez.cloudstorage.service.FileSystemService;
-import com.skillnez.cloudstorage.utils.PathFactory;
+import com.skillnez.cloudstorage.service.PathService;
+import com.skillnez.cloudstorage.utils.FolderTraversalMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,30 +21,27 @@ import java.util.stream.Collectors;
 public class ResourceController {
 
     private final FileSystemService fileSystemService;
+    private final PathService pathService;
 
     @Autowired
-    public ResourceController(FileSystemService fileSystemService) {
+    public ResourceController(FileSystemService fileSystemService, PathService pathService) {
         this.fileSystemService = fileSystemService;
+        this.pathService = pathService;
     }
 
-    @GetMapping("/resource")
-    public ResponseEntity<?> getResource(@AuthenticationPrincipal CustomUserDetails user) {
-        List<StorageInfoResponseDto> searchResult = new ArrayList<>();
-        searchResult.add(new StorageInfoResponseDto("user-8-files/", "", null, ResourceType.DIRECTORY));
-        return ResponseEntity.ok(searchResult);
-    }
-
+//    @GetMapping("/resource")
+//    public ResponseEntity<?> getResource(@AuthenticationPrincipal CustomUserDetails user) {
+//        List<StorageInfoResponseDto> searchResult = new ArrayList<>();
+//        searchResult.add(new StorageInfoResponseDto("user-8-files/", "", null, ResourceType.DIRECTORY));
+//        return ResponseEntity.ok(searchResult);
+//    }
+//
     @GetMapping("/resource/search")
     public ResponseEntity<?> search (@AuthenticationPrincipal CustomUserDetails user,
-                                     @RequestParam("query") String path) {
-        String fullSearchPath = PathFactory.addUserScopedPrefix(user.getId(), path);
-        String fullNormalizedSearchPath = PathFactory.normalizePath(fullSearchPath);
-        List<StorageInfoResponseDto> searchResult = fileSystemService.getElementsInFolder(fullNormalizedSearchPath).
-                stream().filter(dto -> dto.getPath()
-                        .toLowerCase()
-                        .contains(fullSearchPath))
-                .collect(Collectors.toList());
-
+                                     @RequestParam("query") String query) {
+        String backendPath = pathService.formatPathForBackend("", user.getId());
+        List<StorageInfoResponseDto> searchResult = fileSystemService.searchElements(backendPath, query, user.getId());
+//todo надо добавить проверку чтобы если нет родительской папки создаваемого ресурса, то создавать его
         return ResponseEntity.ok(searchResult);
     }
 
@@ -52,9 +50,8 @@ public class ResourceController {
     public ResponseEntity<?> upload (@RequestParam("path") String path,
                                      @RequestParam("object") MultipartFile[] file,
                                      @AuthenticationPrincipal CustomUserDetails user) {
-        String fullPath = PathFactory.addUserScopedPrefix(user.getId(), path);
-        String fullNormalizedPath = PathFactory.normalizePath(fullPath);
-        return ResponseEntity.status(201).body(fileSystemService.upload(fullNormalizedPath, file));
+        String backendPath = pathService.formatPathForBackend(path, user.getId());
+        return ResponseEntity.status(201).body(fileSystemService.upload(backendPath, file));
     }
 
 }

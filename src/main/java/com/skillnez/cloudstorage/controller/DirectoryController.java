@@ -4,7 +4,8 @@ import com.skillnez.cloudstorage.dto.ResourceType;
 import com.skillnez.cloudstorage.dto.StorageInfoResponseDto;
 import com.skillnez.cloudstorage.entity.CustomUserDetails;
 import com.skillnez.cloudstorage.service.FileSystemService;
-import com.skillnez.cloudstorage.utils.PathFactory;
+import com.skillnez.cloudstorage.service.PathService;
+import com.skillnez.cloudstorage.utils.FolderTraversalMode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,28 +16,25 @@ import org.springframework.web.bind.annotation.*;
 public class DirectoryController {
 
     private final FileSystemService fileSystemService;
+    private final PathService pathService;
 
     @Autowired
-    public DirectoryController(FileSystemService fileSystemService) {
+    public DirectoryController(FileSystemService fileSystemService, PathService pathService) {
         this.fileSystemService = fileSystemService;
+        this.pathService = pathService;
     }
 
     @GetMapping("/directory")
     public ResponseEntity<?> getStorageInfo(@AuthenticationPrincipal CustomUserDetails user, @RequestParam String path) {
-        String fullPath = PathFactory.addUserScopedPrefix(user.getId(), path);
-        String fullNormalizedPath = PathFactory.normalizePath(fullPath);
-        fileSystemService.checkFolderDoesntExists(fullNormalizedPath);
-        return ResponseEntity.ok(fileSystemService.getElementsInFolder(fullNormalizedPath));
+        Long userId = user.getId();
+        String backendPath = pathService.formatPathForBackend(path, userId);
+        return ResponseEntity.ok(fileSystemService.getElementsInFolder(backendPath, userId));
     }
 
     @PostMapping("/directory")
-    public ResponseEntity<?> createFolder(@AuthenticationPrincipal CustomUserDetails user, @RequestParam String path) {
-        String normalizedPath = PathFactory.normalizePath(path);
-        String fullNormalizedPath = PathFactory.addUserScopedPrefix(user.getId(), normalizedPath);
-        fileSystemService.checkFolderAlreadyExists(fullNormalizedPath);
-        fileSystemService.checkParentFolders(fullNormalizedPath);
-        fileSystemService.createFolder(fullNormalizedPath);
-        return ResponseEntity.ok(new StorageInfoResponseDto
-                (fullNormalizedPath, PathFactory.getFileOrFolderName(normalizedPath), ResourceType.DIRECTORY));
+    public ResponseEntity<StorageInfoResponseDto> createFolder(@AuthenticationPrincipal CustomUserDetails user,
+                                                               @RequestParam String path) {
+        String backendPath = pathService.formatPathForBackend(path, user.getId());
+        return ResponseEntity.status(201).body(fileSystemService.createFolder(backendPath));
     }
 }
