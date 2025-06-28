@@ -14,16 +14,21 @@ import io.minio.messages.Item;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @Slf4j
 @Service
@@ -203,6 +208,49 @@ public class FileSystemService {
             } catch (IOException | GeneralSecurityException | MinioException e) {
                 throw new MinioOperationException("Object listing error: " + backendPath, e);
             }
+        }
+    }
+
+    public InputStreamResource downloadFile (String backendPath, Long userId) {
+        if (!isFolderExists(backendPath) & !backendPath.equals("user-" + userId + "-files/")) {
+            throw new NoParentFolderException("path does not exist");
+        }
+        InputStream downloadStream;
+        try {
+            downloadStream = minioClient.getObject(GetObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(backendPath)
+                    .build());
+        } catch (IOException | GeneralSecurityException | MinioException e) {
+            throw new MinioOperationException("Object listing error: " + backendPath, e);
+        }
+        if (downloadStream == null) {
+            throw new NoSuchElementException("No element found");
+        }
+        return new InputStreamResource(downloadStream);
+    }
+
+    public void downloadFolder (String backendPath, Long userId, OutputStream outputStream) {
+        if (!isFolderExists(backendPath) & !backendPath.equals("user-" + userId + "-files/")) {
+            throw new NoParentFolderException("path does not exist");
+        }
+        try (ZipOutputStream zipArchive = new ZipOutputStream(outputStream)) {
+            Iterable<Result<Item>> results = listMinioObjects(backendPath, FolderTraversalMode.RECURSIVE);
+            for (Result<Item> result : results) {
+                Item item = result.get();
+                try (InputStream minioDownloadStream = minioClient.getObject(
+                        GetObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(item.objectName())
+                        .build());) {
+                    String entryName = item.objectName().substring(("user-" + userId + "-files/").length());
+                    zipArchive.putNextEntry(new ZipEntry(entryName));
+                    minioDownloadStream.transferTo(zipArchive);
+                    zipArchive.closeEntry();
+                }
+            }
+        } catch (IOException | GeneralSecurityException | MinioException e) {
+            throw new MinioOperationException("Object listing error: " + backendPath, e);
         }
     }
 

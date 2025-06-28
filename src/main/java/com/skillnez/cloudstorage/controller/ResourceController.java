@@ -4,12 +4,18 @@ import com.skillnez.cloudstorage.dto.StorageInfoResponseDto;
 import com.skillnez.cloudstorage.entity.CustomUserDetails;
 import com.skillnez.cloudstorage.service.FileSystemService;
 import com.skillnez.cloudstorage.utils.PathUtils;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,6 +43,25 @@ public class ResourceController {
         String backendPath = PathUtils.formatPathForBackend("", user.getId());
         List<StorageInfoResponseDto> searchResult = fileSystemService.searchElements(backendPath, query, user.getId());
         return ResponseEntity.ok(searchResult);
+    }
+
+    @GetMapping("/resource/download")
+    public void download(@RequestParam("path") String path,
+                                      @AuthenticationPrincipal CustomUserDetails user,
+                                      HttpServletResponse response) throws IOException {
+        String backendPath = PathUtils.formatPathForBackend(path, user.getId());
+        if (backendPath.endsWith("/")) {
+            response.setContentType("application/zip");
+            response.setHeader("Content-Disposition", "attachment; filename=archive.zip");
+            fileSystemService.downloadFolder(backendPath, user.getId(), response.getOutputStream());
+            ResponseEntity.ok().build();
+        } else {
+            InputStreamResource downloadStream = fileSystemService.downloadFile(backendPath, user.getId());
+            ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + Paths.get(path).getFileName() + "\"")
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(downloadStream);
+        }
     }
 
 
