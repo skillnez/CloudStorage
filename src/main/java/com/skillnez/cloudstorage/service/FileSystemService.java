@@ -172,6 +172,40 @@ public class FileSystemService {
         return element;
     }
 
+    public void deleteFile (String backendPath, Long userId) {
+        if (!isFolderExists(backendPath) & !backendPath.equals("user-" + userId + "-files/")) {
+            throw new NoParentFolderException("path does not exist");
+        }
+        try {
+            minioClient.removeObject(
+                    RemoveObjectArgs.builder()
+                    .bucket(bucketName)
+                    .object(backendPath)
+                    .build());
+        } catch (IOException | GeneralSecurityException | MinioException e) {
+            throw new MinioOperationException("Object listing error: " + backendPath, e);
+        }
+    }
+
+    public void deleteFolder(String backendPath, Long userId) {
+        if (!isFolderExists(backendPath) & !backendPath.equals("user-" + userId + "-files/")) {
+            throw new NoParentFolderException("path does not exist");
+        }
+        Iterable<Result<Item>> results = listMinioObjects(backendPath, FolderTraversalMode.RECURSIVE);
+        for (Result<Item> result : results) {
+            try {
+                Item item = result.get();
+                minioClient.removeObject(
+                        RemoveObjectArgs.builder()
+                        .bucket(bucketName)
+                        .object(item.objectName())
+                        .build());
+            } catch (IOException | GeneralSecurityException | MinioException e) {
+                throw new MinioOperationException("Object listing error: " + backendPath, e);
+            }
+        }
+    }
+
     private List<StorageInfoResponseDto> mapMinioObjects(String backendPath, Iterable<Result<Item>> results) {
         List<StorageInfoResponseDto> elementsInFolder = new ArrayList<>();
         for (Result<Item> result : results) {

@@ -24,7 +24,7 @@ public class ResourceController {
         this.fileSystemService = fileSystemService;
     }
 
-        @GetMapping("/resource")
+    @GetMapping("/resource")
     public ResponseEntity<?> getResource(@RequestParam("path") String path, @AuthenticationPrincipal CustomUserDetails user) {
         String backendPath = PathUtils.formatPathForBackend(path, user.getId());
         //TODO надо будет отрефакторить метод этого сервиса
@@ -44,6 +44,17 @@ public class ResourceController {
     public ResponseEntity<?> upload(@RequestParam("path") String path, @RequestParam("object") MultipartFile[] file, @AuthenticationPrincipal CustomUserDetails user) {
         String backendPath = PathUtils.formatPathForBackend(path, user.getId());
         return ResponseEntity.status(201).body(fileSystemService.upload(backendPath, file));
+    }
+
+    @DeleteMapping("/resource")
+    public ResponseEntity<?> delete(@RequestParam("path") String path, @AuthenticationPrincipal CustomUserDetails user) {
+        String backendPath = PathUtils.formatPathForBackend(path, user.getId());
+        if (backendPath.endsWith("/")) {
+            fileSystemService.deleteFolder(backendPath, user.getId());
+        } else {
+            fileSystemService.deleteFile(backendPath, user.getId());
+        }
+        return ResponseEntity.status(204).build();
     }
 
 }
