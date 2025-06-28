@@ -13,12 +13,12 @@ public class CustomUserDetails implements org.springframework.security.core.user
     @Getter
     private final Long id;
     private final String username;
-    private String password;
     private final boolean enabled;
     private final boolean accountNonExpired;
     private final boolean credentialsNonExpired;
     private final boolean accountNonLocked;
     private final List<GrantedAuthority> authorities;
+    private String password;
 
     public CustomUserDetails(Long id, String username, String password, boolean enabled, boolean accountNonExpired, boolean credentialsNonExpired, boolean accountNonLocked, List<GrantedAuthority> authorities) {
         this.id = id;
@@ -34,7 +34,7 @@ public class CustomUserDetails implements org.springframework.security.core.user
 
     @Override
     public void eraseCredentials() {
-        this.password=null;
+        this.password = null;
     }
 
     @Override

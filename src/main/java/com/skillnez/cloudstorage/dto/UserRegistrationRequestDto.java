@@ -1,7 +1,11 @@
 package com.skillnez.cloudstorage.dto;
 
-import jakarta.validation.constraints.*;
-import lombok.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -15,8 +19,7 @@ public class UserRegistrationRequestDto {
 
     @NotBlank(message = "Password can't be blank")
     @Size(min = 4, max = 64, message = "Password must be at least 4 and no more than 64 characters")
-    @Pattern(regexp = "^[a-zA-Z0-9!@#$%^&*()_+\\-={}|\\[\\]:;\"'<>,.?/~`]+$",
-            message = "Password can contain only letters, digits and special characters without spaces")
+    @Pattern(regexp = "^[a-zA-Z0-9!@#$%^&*()_+\\-={}|\\[\\]:;\"'<>,.?/~`]+$", message = "Password can contain only letters, digits and special characters without spaces")
     private String password;
 
     private String repeatPassword;

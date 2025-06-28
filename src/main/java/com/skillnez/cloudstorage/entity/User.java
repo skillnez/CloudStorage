@@ -28,13 +28,13 @@ public class User {
     @Column(name = "enabled", nullable = false)
     private boolean enabled;
 
-    @Column(name = "account_non_expired" , nullable = false)
+    @Column(name = "account_non_expired", nullable = false)
     private boolean accountNonExpired;
 
-    @Column(name = "credentials_non_expired" , nullable = false)
+    @Column(name = "credentials_non_expired", nullable = false)
     private boolean credentialsNonExpired;
 
-    @Column(name = "account_non_locked" , nullable = false)
+    @Column(name = "account_non_locked", nullable = false)
     private boolean accountNonLocked;
 
     @ElementCollection(fetch = FetchType.EAGER)

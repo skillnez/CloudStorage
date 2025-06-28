@@ -14,6 +14,7 @@ public class AllControllersExceptionHandler {
     public ResponseEntity<?> handleIllegalArgumentException(IllegalArgumentException e) {
         return ResponseEntity.status(400).body(Map.of("message", "request parameters are invalid or contains unsupported characters"));
     }
+
     @ExceptionHandler(MinioOperationException.class)
     public ResponseEntity<?> handleMinioOperationException(MinioOperationException e) {
         return ResponseEntity.status(500).body(Map.of("message", e.getMessage()));
