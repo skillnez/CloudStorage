@@ -7,10 +7,8 @@ import com.skillnez.cloudstorage.exception.MinioOperationException;
 import com.skillnez.cloudstorage.exception.NoParentFolderException;
 import com.skillnez.cloudstorage.utils.FolderTraversalMode;
 import com.skillnez.cloudstorage.utils.PathUtils;
-import io.minio.ListObjectsArgs;
-import io.minio.MinioClient;
-import io.minio.PutObjectArgs;
-import io.minio.Result;
+import io.minio.*;
+import io.minio.errors.ErrorResponseException;
 import io.minio.errors.MinioException;
 import io.minio.messages.Item;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +23,7 @@ import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @Slf4j
 @Service
@@ -145,6 +144,32 @@ public class FileSystemService {
             }
         }
         return searchResults;
+    }
+
+    public StorageInfoResponseDto getElement (String backendPath, Long userId) {
+        if (!isFolderExists(backendPath) & !backendPath.equals("user-" + userId + "-files/")) {
+            throw new NoParentFolderException("path does not exist");
+        }
+        StorageInfoResponseDto element = null;
+        try {
+            StatObjectResponse statObject = minioClient.statObject(
+                    StatObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(backendPath)
+                            .build()
+            );
+            element = PathUtils.formStorageInfoResponseDto(backendPath, statObject.size());
+        } catch (ErrorResponseException e) {
+            if (e.errorResponse().code().equals("NoSuchKey")) {
+                throw new NoSuchElementException("No element found");
+            }
+        } catch (IOException | GeneralSecurityException | MinioException e) {
+            throw new MinioOperationException("Object listing error: " + backendPath, e);
+        }
+        if (element == null) {
+            throw new NoSuchElementException("No element found");
+        }
+        return element;
     }
 
     private List<StorageInfoResponseDto> mapMinioObjects(String backendPath, Iterable<Result<Item>> results) {

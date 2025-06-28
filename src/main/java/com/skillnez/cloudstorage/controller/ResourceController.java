@@ -10,6 +10,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -23,13 +24,14 @@ public class ResourceController {
         this.fileSystemService = fileSystemService;
     }
 
-    //    @GetMapping("/resource")
-//    public ResponseEntity<?> getResource(@AuthenticationPrincipal CustomUserDetails user) {
-//        List<StorageInfoResponseDto> searchResult = new ArrayList<>();
-//        searchResult.add(new StorageInfoResponseDto("user-8-files/", "", null, ResourceType.DIRECTORY));
-//        return ResponseEntity.ok(searchResult);
-//    }
-//
+        @GetMapping("/resource")
+    public ResponseEntity<?> getResource(@RequestParam("path") String path, @AuthenticationPrincipal CustomUserDetails user) {
+        String backendPath = PathUtils.formatPathForBackend(path, user.getId());
+        //TODO надо будет отрефакторить метод этого сервиса
+        StorageInfoResponseDto resource = fileSystemService.getElement(backendPath, user.getId());
+        return ResponseEntity.ok(resource);
+    }
+
     @GetMapping("/resource/search")
     public ResponseEntity<?> search(@AuthenticationPrincipal CustomUserDetails user, @RequestParam("query") String query) {
         String backendPath = PathUtils.formatPathForBackend("", user.getId());

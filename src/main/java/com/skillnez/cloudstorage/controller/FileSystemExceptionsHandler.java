@@ -9,12 +9,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 @RestControllerAdvice(assignableTypes = {DirectoryController.class, ResourceController.class})
 public class FileSystemExceptionsHandler {
 
-    @ExceptionHandler(NoHandlerFoundException.class)
-    public ResponseEntity<?> handleNoHandlerFoundException(NoHandlerFoundException e) {
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<?> handleNoSuchElementException(NoSuchElementException e) {
         return ResponseEntity.status(404).body(Map.of("message", e.getMessage()));
     }
 
