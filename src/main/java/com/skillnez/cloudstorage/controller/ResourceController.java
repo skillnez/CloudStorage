@@ -16,7 +16,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -58,9 +57,22 @@ public class ResourceController {
         } else {
             InputStreamResource downloadStream = fileSystemService.downloadFile(backendPath, user.getId());
             ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + Paths.get(path).getFileName() + "\"")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + Paths.get(backendPath).getFileName() + "\"")
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .body(downloadStream);
+        }
+    }
+
+    @GetMapping("/resource/move")
+    public ResponseEntity<?> move(@RequestParam("from") String pathFrom,
+                                  @RequestParam("to") String pathTo,
+                                  @AuthenticationPrincipal CustomUserDetails user){
+        String backendPathFrom = PathUtils.formatPathForBackend(pathFrom, user.getId());
+        String backendPathTo = PathUtils.formatPathForBackend(pathTo, user.getId());
+        if (backendPathFrom.endsWith("/")){
+            return ResponseEntity.ok().body(fileSystemService.moveOrRenameFolder(backendPathFrom, backendPathTo, user.getId()));
+        } else {
+            return ResponseEntity.ok().body(fileSystemService.moveOrRenameFile(backendPathFrom, backendPathTo, user.getId()));
         }
     }
 

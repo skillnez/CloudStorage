@@ -32,15 +32,54 @@ public class PathUtils {
         return new StorageInfoResponseDto(normalizedPath, name, size, resourceType);
     }
 
-    private static String normalizePath(String path) {
+    public static String removeFileOrFolderName(String backendPath) {
+        String normalizedPath = normalizePath(backendPath);
+        int slashIndex;
+        if (normalizedPath.endsWith("/")) {
+            slashIndex = normalizedPath.lastIndexOf('/', normalizedPath.length() - 2);
+        } else {
+            slashIndex = normalizedPath.lastIndexOf('/');
+        }
+        return normalizedPath.substring(0, slashIndex + 1);
+    }
+
+    public static String getFileOrFolderName(String backendPath) {
+        String normalizedPath = normalizePath(backendPath);
+        int slashIndex;
+        if (normalizedPath.endsWith("/")) {
+            slashIndex = normalizedPath.lastIndexOf('/', normalizedPath.length() - 2);
+        } else {
+            slashIndex = normalizedPath.lastIndexOf('/');
+        }
+        if (slashIndex == -1) {
+            throw new BadPathFormatException("Filename can't be blank");
+        }
+        return normalizedPath.substring(slashIndex + 1);
+    }
+
+    public static String normalizePath(String path) {
         if (path.matches(".*[:*?\"<>|].*")) {
             throw new BadPathFormatException("path cannot contain ':  *  ?  \"  <  >  |'");
         }
         String cleaned = removeTrailingSlash(path);
         if (cleaned.contains("..")) {
-            throw new BadPathFormatException("path cannot contain .. in row");
+            cleaned = cleaned.replaceAll("\\.{2,}", ".");
         }
         return cleaned;
+    }
+
+    public static String getExtension(String pathFrom, String PathTo) {
+        String backendPathFrom = normalizePath(pathFrom);
+        String backendPathTo = normalizePath(PathTo);
+        String extension = "";
+        int dotIndex = backendPathFrom.lastIndexOf('.');
+        if (dotIndex != -1 || dotIndex != backendPathFrom.length() - 1) {
+            extension = "." + backendPathFrom.substring(dotIndex + 1).toLowerCase();
+            if (backendPathTo.toLowerCase().endsWith(extension)) {
+                return "";
+            }
+        }
+        return extension;
     }
 
     private static String addUserRootFolder(String rawPath, Long id) {
@@ -55,29 +94,6 @@ public class PathUtils {
             return String.format("%s%s", backendPath, appendix);
         }
         throw new BadPathFormatException("Parent path must be a directory (ends with /)");
-    }
-
-    private static String getFileOrFolderName(String backendPath) {
-        int slashIndex;
-        if (backendPath.endsWith("/")) {
-            slashIndex = backendPath.lastIndexOf('/', backendPath.length() - 2);
-        } else {
-            slashIndex = backendPath.lastIndexOf('/');
-        }
-        if (slashIndex == -1) {
-            throw new BadPathFormatException("Filename can't be blank");
-        }
-        return backendPath.substring(slashIndex + 1);
-    }
-
-    private static String removeFileOrFolderName(String backendPath) {
-        int slashIndex;
-        if (backendPath.endsWith("/")) {
-            slashIndex = backendPath.lastIndexOf('/', backendPath.length() - 2);
-        } else {
-            slashIndex = backendPath.lastIndexOf('/');
-        }
-        return backendPath.substring(0, slashIndex + 1);
     }
 
     private static String removeUserRootFolder(String backendPath) {
