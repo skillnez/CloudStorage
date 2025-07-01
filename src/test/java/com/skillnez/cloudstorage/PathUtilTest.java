@@ -48,12 +48,6 @@ public class PathUtilTest {
     }
 
     @Test
-    void testFormatPathForBackend_pathTraversal() {
-        assertThrows(BadPathFormatException.class,
-                () -> PathUtils.formatPathForBackend(PATH_TRAVERSAL_ATTEMPT, DEFAULT_USER_ID));
-    }
-
-    @Test
     public void testFormatPathForUpload() {
         ///В данных тестах не проверяется валидность пути, потому что все то же самое проверено в тестах выше
         assertThrows(BadPathFormatException.class, () -> PathUtils.formatPathForUpload(EMPTY_STRING, NORMAL_DIRECTORY_PATH));

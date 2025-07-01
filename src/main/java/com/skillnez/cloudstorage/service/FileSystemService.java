@@ -7,18 +7,21 @@ import com.skillnez.cloudstorage.exception.MinioOperationException;
 import com.skillnez.cloudstorage.exception.NoParentFolderException;
 import com.skillnez.cloudstorage.utils.FolderTraversalMode;
 import com.skillnez.cloudstorage.utils.PathUtils;
-import io.minio.*;
+import io.minio.Result;
+import io.minio.StatObjectResponse;
 import io.minio.errors.ErrorResponseException;
 import io.minio.errors.MinioException;
 import io.minio.messages.Item;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
@@ -35,13 +38,11 @@ public class FileSystemService {
     private static final ByteArrayInputStream EMPTY_STREAM = new ByteArrayInputStream(new byte[]{});
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
     private static final Long FOLDER_SIZE = 0L;
-    private final MinioClient minioClient;
-    @Value("${minio.bucket-name}")
-    private String bucketName;
+    private final MinioClientService minioClientService;
 
     @Autowired
-    public FileSystemService(MinioClient minioClient) {
-        this.minioClient = minioClient;
+    public FileSystemService(MinioClientService minioClientService) {
+        this.minioClientService = minioClientService;
     }
 
     public StorageInfoResponseDto createFolder(String backendPath) {
@@ -55,7 +56,8 @@ public class FileSystemService {
             throw new NoParentFolderException("parent folder does not exist");
         }
         log.info("folder: {} created", backendPath);
-        return putObjectInStorage(backendPath, EMPTY_STREAM, FOLDER_SIZE, DEFAULT_CONTENT_TYPE);
+        minioClientService.putObject(backendPath, EMPTY_STREAM, FOLDER_SIZE, DEFAULT_CONTENT_TYPE);
+        return PathUtils.formStorageInfoResponseDto(backendPath, null);
     }
 
     //TODO Обязательно оптимизируй создание пустых папок, выглядит дерьмово
@@ -79,10 +81,10 @@ public class FileSystemService {
                 for (int i = 0; i < pathPrefix.length - 1; i++) {
                     String currentPath = stringBuilder.append(pathPrefix[i]).append("/").toString();
                     if (!isFileOrFolderExists(currentPath)) {
-                        putObjectInStorage(currentPath, EMPTY_STREAM, FOLDER_SIZE, DEFAULT_CONTENT_TYPE);
+                        minioClientService.putObject(currentPath, EMPTY_STREAM, FOLDER_SIZE, DEFAULT_CONTENT_TYPE);
                     }
                 }
-                putObjectInStorage(backendPathWithFileName, fileItem.getInputStream(), fileItem.getSize(), fileItem.getContentType());
+                minioClientService.putObject(backendPathWithFileName, fileItem.getInputStream(), fileItem.getSize(), fileItem.getContentType());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -90,19 +92,21 @@ public class FileSystemService {
         }
         return uploadedElements;
     }
+
     public List<StorageInfoResponseDto> getElementsInFolder(String backendPath, Long userId) {
-        if (!isFileOrFolderExists(backendPath) & !backendPath.equals("user-" + userId + "-files/")) {
+        if (!isFileOrFolderExists(backendPath) && !backendPath.equals("user-" + userId + "-files/")) {
             throw new NoParentFolderException("path does not exist");
         }
-        Iterable<Result<Item>> results = listMinioObjects(backendPath, FolderTraversalMode.NON_RECURSIVE);
+        Iterable<Result<Item>> results = minioClientService.listObjects(backendPath, FolderTraversalMode.NON_RECURSIVE);
         return mapMinioObjects(backendPath, results);
     }
+
     public List<StorageInfoResponseDto> searchElements(String backendPath, String query, Long userId) {
-        if (!isFileOrFolderExists(backendPath) & !backendPath.equals("user-" + userId + "-files/")) {
+        if (!isFileOrFolderExists(backendPath) && !backendPath.equals("user-" + userId + "-files/")) {
             throw new NoParentFolderException("path does not exist");
         }
         List<StorageInfoResponseDto> searchResults = new ArrayList<>();
-        Iterable<Result<Item>> results = listMinioObjects(backendPath, FolderTraversalMode.RECURSIVE);
+        Iterable<Result<Item>> results = minioClientService.listObjects(backendPath, FolderTraversalMode.RECURSIVE);
         for (Result<Item> result : results) {
             try {
                 Item item = result.get();
@@ -120,25 +124,18 @@ public class FileSystemService {
         return searchResults;
     }
 
-    public StorageInfoResponseDto getElement (String backendPath, Long userId) {
-        if (!isFileOrFolderExists(backendPath) & !backendPath.equals("user-" + userId + "-files/")) {
+    public StorageInfoResponseDto getElement(String backendPath, Long userId) {
+        if (!isFileOrFolderExists(backendPath) && !backendPath.equals("user-" + userId + "-files/")) {
             throw new NoParentFolderException("path does not exist");
         }
         StorageInfoResponseDto element = null;
         try {
-            StatObjectResponse statObject = minioClient.statObject(
-                    StatObjectArgs.builder()
-                            .bucket(bucketName)
-                            .object(backendPath)
-                            .build()
-            );
+            StatObjectResponse statObject = minioClientService.statObject(backendPath);
             element = PathUtils.formStorageInfoResponseDto(backendPath, statObject.size());
         } catch (ErrorResponseException e) {
             if (e.errorResponse().code().equals("NoSuchKey")) {
                 throw new NoSuchElementException("No element found");
             }
-        } catch (IOException | GeneralSecurityException | MinioException e) {
-            throw new MinioOperationException("Unexpected minio error", e);
         }
         if (element == null) {
             throw new NoSuchElementException("No element found");
@@ -146,27 +143,27 @@ public class FileSystemService {
         return element;
     }
 
-    public void deleteFile (String backendPath, Long userId) {
-        if (!isFileOrFolderExists(backendPath) & !backendPath.equals("user-" + userId + "-files/")) {
+    public void deleteFile(String backendPath, Long userId) {
+        if (!isFileOrFolderExists(backendPath) && !backendPath.equals("user-" + userId + "-files/")) {
             throw new NoParentFolderException("path does not exist");
         }
         log.info("deleted file {} from {}", Path.of(backendPath).getFileName().toString(), backendPath);
-        removeFileFromMinio(backendPath);
+        minioClientService.removeObject(backendPath);
     }
 
     public void deleteFolder(String backendPath, Long userId) {
-        if (!isFileOrFolderExists(backendPath) & !backendPath.equals("user-" + userId + "-files/")) {
+        if (!isFileOrFolderExists(backendPath) && !backendPath.equals("user-" + userId + "-files/")) {
             throw new NoParentFolderException("path does not exist");
         }
-        removeFolderFromMinio(backendPath);
+        removeFolder(backendPath);
     }
 
-    public InputStreamResource downloadFile (String backendPath, Long userId) {
-        if (!isFileOrFolderExists(backendPath) & !backendPath.equals("user-" + userId + "-files/")) {
+    public InputStreamResource downloadFile(String backendPath, Long userId) {
+        if (!isFileOrFolderExists(backendPath) && !backendPath.equals("user-" + userId + "-files/")) {
             throw new NoParentFolderException("path does not exist");
         }
         InputStream downloadStream;
-        downloadStream = getInputStreamFromMinioObject(backendPath);
+        downloadStream = minioClientService.getObject(backendPath);
         if (downloadStream == null) {
             throw new NoSuchElementException("No element found");
         }
@@ -174,7 +171,7 @@ public class FileSystemService {
     }
 
     public StorageInfoResponseDto moveOrRenameFile(String backendPathFrom, String backendPathTo, Long userId) {
-        if (!isFileOrFolderExists(backendPathFrom) & !backendPathFrom.equals("user-" + userId + "-files/")) {
+        if (!isFileOrFolderExists(backendPathFrom) && !backendPathFrom.equals("user-" + userId + "-files/")) {
             throw new NoParentFolderException("path 'from' does not exist");
         }
         if (!isFileOrFolderExists(PathUtils.removeFileOrFolderName(backendPathTo)) & !backendPathTo.equals("user-" + userId + "-files/")) {
@@ -185,25 +182,13 @@ public class FileSystemService {
         if (isFileOrFolderExists(backendPathToWithExtension)) {
             throw new FolderAlreadyExistsException("file already exists in path " + backendPathToWithExtension);
         }
-        try {
-        minioClient.copyObject(
-                CopyObjectArgs.builder()
-                        .bucket(bucketName)
-                        .object(backendPathToWithExtension)
-                        .source(CopySource.builder()
-                                .bucket(bucketName)
-                                .object(backendPathFrom)
-                                .build())
-                        .build());
-        } catch (IOException | GeneralSecurityException | MinioException e) {
-            throw new MinioOperationException("Minio copy error", e);
-        }
-        removeFileFromMinio(backendPathFrom);
+        minioClientService.copyObject(backendPathFrom, backendPathToWithExtension);
+        minioClientService.removeObject(backendPathFrom);
         return getElement(backendPathToWithExtension, userId);
     }
 
     public StorageInfoResponseDto moveOrRenameFolder(String backendPathFrom, String backendPathTo, Long userId) {
-        if (!isFileOrFolderExists(backendPathFrom) & !backendPathFrom.equals("user-" + userId + "-files/")) {
+        if (!isFileOrFolderExists(backendPathFrom) && !backendPathFrom.equals("user-" + userId + "-files/")) {
             throw new NoParentFolderException("path 'from' does not exist");
         }
         if (!isFileOrFolderExists(PathUtils.removeFileOrFolderName(backendPathTo)) & !backendPathTo.equals("user-" + userId + "-files/")) {
@@ -212,42 +197,44 @@ public class FileSystemService {
         if (isFileOrFolderExists(backendPathTo)) {
             throw new FolderAlreadyExistsException("folder already exists in path " + backendPathTo);
         }
-        Iterable<Result<Item>> results = listMinioObjects(backendPathFrom, FolderTraversalMode.RECURSIVE);
+        Iterable<Result<Item>> results = minioClientService.listObjects(backendPathFrom, FolderTraversalMode.RECURSIVE);
+        List<String> copyPathBuffer = new ArrayList<>();
         for (Result<Item> result : results) {
+
             try {
                 Item item = result.get();
                 String oldFolderName = item.objectName();
                 String newFolderName = oldFolderName.replaceFirst(Pattern.quote(backendPathFrom), backendPathTo);
-                minioClient.copyObject(
-                        CopyObjectArgs.builder()
-                                .bucket(bucketName)
-                                .object(newFolderName)
-                                .source(CopySource.builder()
-                                        .bucket(bucketName)
-                                        .object(oldFolderName)
-                                        .build())
-                                .build());
-                minioClient.removeObject(
-                        RemoveObjectArgs.builder()
-                                .bucket(bucketName)
-                                .object(oldFolderName)
-                                .build());
+                //EXPERIMENTAL
+                if (newFolderName.startsWith(oldFolderName) && newFolderName.length() > oldFolderName.length()
+                && newFolderName.endsWith("/") && oldFolderName.endsWith("/")) {
+                    log.info("EXPERIMENTAL PARENT FOLDER CUT RESTRICTION");
+                    throw new BadPathFormatException("Нельзя переместить папку внутрь самой себя или её потомка");
+                }
+                //EXPERIMENTAL
+                minioClientService.copyObject(oldFolderName, newFolderName);
+                copyPathBuffer.add(oldFolderName);
             } catch (IOException | GeneralSecurityException | MinioException e) {
                 throw new MinioOperationException("Object listing error", e);
             }
         }
+        //сделал для того, чтобы разделить операции копирования и удаления
+        for (String oldPath : copyPathBuffer) {
+            minioClientService.removeObject(oldPath);
+        }
+        copyPathBuffer.clear();
         return getElement(backendPathTo, userId);
     }
 
-    public void downloadFolder (String backendPath, Long userId, OutputStream outputStream) {
+    public void downloadFolder(String backendPath, Long userId, OutputStream outputStream) {
         if (!isFileOrFolderExists(backendPath) & !backendPath.equals("user-" + userId + "-files/")) {
             throw new NoParentFolderException("path does not exist");
         }
         try (ZipOutputStream zipArchive = new ZipOutputStream(outputStream)) {
-            Iterable<Result<Item>> results = listMinioObjects(backendPath, FolderTraversalMode.RECURSIVE);
+            Iterable<Result<Item>> results = minioClientService.listObjects(backendPath, FolderTraversalMode.RECURSIVE);
             for (Result<Item> result : results) {
                 Item item = result.get();
-                try (InputStream minioDownloadStream = getInputStreamFromMinioObject(item.objectName())) {
+                try (InputStream minioDownloadStream = minioClientService.getObject(item.objectName())) {
                     String entryName = item.objectName().substring(("user-" + userId + "-files/").length());
                     zipArchive.putNextEntry(new ZipEntry(entryName));
                     minioDownloadStream.transferTo(zipArchive);
@@ -259,36 +246,19 @@ public class FileSystemService {
         }
     }
 
-    private StorageInfoResponseDto putObjectInStorage(String backendPath, InputStream file, long fileSize,
-                                                      String contentType) {
-        try {
-            minioClient.putObject(
-                    PutObjectArgs.builder()
-                            .bucket(bucketName)
-                            .object(backendPath)
-                            .stream(file, fileSize, -1)
-                            .contentType(contentType).build());
-            return PathUtils.formStorageInfoResponseDto(backendPath, null);
-        } catch (IOException | GeneralSecurityException | MinioException e) {
-            throw new MinioOperationException("folder creation error: " + backendPath, e);
-        }
-    }
-
     private boolean isFileOrFolderExists(String path) {
         try {
-            minioClient.statObject(
-                    StatObjectArgs.builder()
-                            .bucket(bucketName)
-                            .object(path)
-                            .build()
-            );
-            return true;
-        } catch (Exception e) {
-            return false;
+            minioClientService.statObject(path);
+        } catch (ErrorResponseException e) {
+            if (e.errorResponse().code().equals("NoSuchKey")) {
+                return false;
+            }
         }
+        return true;
     }
 
     private boolean isParentFolderExists(String backendPath) {
+        backendPath = PathUtils.normalizePath(backendPath);
         String[] pathPrefix = backendPath.split("/");
         if (pathPrefix.length <= 2) {
             return true;
@@ -303,45 +273,15 @@ public class FileSystemService {
         return true;
     }
 
-    private InputStream getInputStreamFromMinioObject(String backendPath) {
-        InputStream downloadStream;
-        try {
-            downloadStream = minioClient.getObject(
-                    GetObjectArgs.builder()
-                    .bucket(bucketName)
-                    .object(backendPath)
-                    .build());
-        } catch (IOException | GeneralSecurityException | MinioException e) {
-            throw new MinioOperationException("Object listing error: " + backendPath, e);
-        }
-        return downloadStream;
-    }
-
-    private void removeFolderFromMinio(String backendPath) {
-        Iterable<Result<Item>> results = listMinioObjects(backendPath, FolderTraversalMode.RECURSIVE);
+    private void removeFolder(String backendPath) {
+        Iterable<Result<Item>> results = minioClientService.listObjects(backendPath, FolderTraversalMode.RECURSIVE);
         for (Result<Item> result : results) {
             try {
                 Item item = result.get();
-                minioClient.removeObject(
-                        RemoveObjectArgs.builder()
-                                .bucket(bucketName)
-                                .object(item.objectName())
-                                .build());
+                minioClientService.removeObject(item.objectName());
             } catch (IOException | GeneralSecurityException | MinioException e) {
                 throw new MinioOperationException("Object listing error: " + backendPath, e);
             }
-        }
-    }
-
-    private void removeFileFromMinio(String backendPath) {
-        try {
-            minioClient.removeObject(
-                    RemoveObjectArgs.builder()
-                            .bucket(bucketName)
-                            .object(backendPath)
-                            .build());
-        } catch (IOException | GeneralSecurityException | MinioException e) {
-            throw new MinioOperationException("removing has ended ", e);
         }
     }
 
@@ -359,15 +299,5 @@ public class FileSystemService {
             }
         }
         return elementsInFolder;
-    }
-
-    private Iterable<Result<Item>> listMinioObjects(String backendPath, FolderTraversalMode traversalMode) {
-        boolean searchMode = (FolderTraversalMode.RECURSIVE == traversalMode);
-        return minioClient.listObjects(
-                ListObjectsArgs.builder()
-                        .bucket(bucketName)
-                        .prefix(backendPath)
-                        .recursive(searchMode)
-                        .build());
     }
 }
