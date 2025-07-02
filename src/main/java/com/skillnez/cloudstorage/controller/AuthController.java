@@ -38,19 +38,23 @@ public class AuthController {
     //todo сделать обработку ошибок
 
     @PostMapping("/sign-in")
-    public ResponseEntity<?> signIn(@RequestBody UserSignInRequestDto userSignInRequestDto, HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<?> signIn(@RequestBody UserSignInRequestDto userSignInRequestDto,
+                                    HttpServletRequest request, HttpServletResponse response) {
         return authenticateUser(userSignInRequestDto.getUsername(), userSignInRequestDto.getPassword(), request, response);
     }
 
     @PostMapping("/sign-up")
-    public ResponseEntity<?> signUp(@RequestBody UserRegistrationRequestDto registrationRequestDto, HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<?> signUp(@RequestBody UserRegistrationRequestDto registrationRequestDto,
+                                    HttpServletRequest request, HttpServletResponse response) {
         userService.registerUser(registrationRequestDto);
-
-        return authenticateUser(registrationRequestDto.getUsername(), registrationRequestDto.getPassword(), request, response);
+        return authenticateUser(registrationRequestDto.getUsername(),
+                registrationRequestDto.getPassword(), request, response);
     }
 
-    private ResponseEntity<?> authenticateUser(String username, String password, HttpServletRequest request, HttpServletResponse response) {
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+    private ResponseEntity<?> authenticateUser(String username, String password, HttpServletRequest request,
+                                               HttpServletResponse response) {
+        Authentication authentication = authenticationManager
+                .authenticate(new UsernamePasswordAuthenticationToken(username, password));
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authentication);
         SecurityContextHolder.setContext(context);
