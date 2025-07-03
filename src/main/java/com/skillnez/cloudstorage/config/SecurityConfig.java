@@ -59,9 +59,11 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/index.html", "/static/**", "/favicon.ico", "/manifest.json").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/sign-in").permitAll().requestMatchers(HttpMethod.POST, "/api/auth/sign-up").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/sign-in").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/sign-up").permitAll()
                         .requestMatchers("/api/**").authenticated()
-                        .requestMatchers("/", "/index.html", "/config.js", "/assets/**", "/login", "/registration", "/files/**").permitAll())
+                        .requestMatchers("/", "/index.html", "/config.js", "/assets/**", "/login", "/registration", "/files/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll())
                 .formLogin(AbstractHttpConfigurer::disable).httpBasic(AbstractHttpConfigurer::disable)
                 .logout(logout -> logout.logoutUrl("/api/auth/sign-out").logoutSuccessHandler((req, res, auth) -> res.setStatus(HttpServletResponse.SC_NO_CONTENT)))
                 .exceptionHandling(eh -> eh.authenticationEntryPoint((request, response, authException) -> {

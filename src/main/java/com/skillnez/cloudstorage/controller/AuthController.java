@@ -36,8 +36,6 @@ public class AuthController {
         this.securityContextRepository = securityContextRepository;
     }
 
-    //todo сделать обработку ошибок
-
     @PostMapping("/sign-in")
     public ResponseEntity<Map<String, String>> signIn(@RequestBody @Valid UserSignInRequestDto userSignInRequestDto,
                                     HttpServletRequest request, HttpServletResponse response) {
