@@ -8,6 +8,7 @@ import com.skillnez.cloudstorage.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -42,7 +43,7 @@ public class UserService {
     public void registerUser(UserRegistrationRequestDto userRegistrationRequestDto) throws UserAlreadyExistsException {
         try {
             saveUser(userRegistrationRequestDto);
-        } catch (ConstraintViolationException e) {
+        } catch (DataIntegrityViolationException e) {
             throw new UserAlreadyExistsException("Account with this username "
                                                  + userRegistrationRequestDto.getUsername() + " already exists");
         }

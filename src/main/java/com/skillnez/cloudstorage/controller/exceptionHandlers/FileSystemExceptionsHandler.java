@@ -1,5 +1,7 @@
-package com.skillnez.cloudstorage.controller;
+package com.skillnez.cloudstorage.controller.exceptionHandlers;
 
+import com.skillnez.cloudstorage.controller.DirectoryController;
+import com.skillnez.cloudstorage.controller.ResourceController;
 import com.skillnez.cloudstorage.exception.BadPathFormatException;
 import com.skillnez.cloudstorage.exception.FolderAlreadyExistsException;
 import com.skillnez.cloudstorage.exception.NoParentFolderException;
@@ -7,7 +9,6 @@ import com.skillnez.cloudstorage.exception.UploadErrorException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.util.Map;
 import java.util.NoSuchElementException;
