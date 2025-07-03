@@ -11,6 +11,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Validated
 @RestController
 @RequestMapping("/api")
@@ -23,8 +25,8 @@ public class DirectoryController {
     }
 
     @GetMapping("/directory")
-    public ResponseEntity<?> getStorageInfo(@AuthenticationPrincipal CustomUserDetails user,
-                                            @RequestParam String path) {
+    public ResponseEntity<List<StorageInfoResponseDto>> getStorageInfo(@AuthenticationPrincipal CustomUserDetails user,
+                                                                       @RequestParam String path) {
         Long userId = user.getId();
         String backendPath = PathUtils.formatPathForBackend(path, userId);
         return ResponseEntity.ok(fileSystemService.getElementsInFolder(backendPath, userId));

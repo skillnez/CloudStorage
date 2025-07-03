@@ -13,7 +13,7 @@ import java.util.Map;
 public class UserController {
 
     @GetMapping("/me")
-    public ResponseEntity<?> me(Authentication authentication) {
+    public ResponseEntity<Map<String, String>> me(Authentication authentication) {
         return ResponseEntity.ok(Map.of("username", authentication.getName()));
     }
 

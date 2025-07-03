@@ -33,7 +33,7 @@ public class ResourceController {
     }
 
     @GetMapping("/resource")
-    public ResponseEntity<?> getResource(@RequestParam("path") String path,
+    public ResponseEntity<StorageInfoResponseDto> getResource(@RequestParam("path") String path,
                                          @AuthenticationPrincipal CustomUserDetails user) {
         String backendPath = PathUtils.formatPathForBackend(path, user.getId());
         StorageInfoResponseDto resource = fileSystemService.getElement(backendPath, user.getId());
@@ -41,7 +41,7 @@ public class ResourceController {
     }
 
     @GetMapping("/resource/search")
-    public ResponseEntity<?> search(@AuthenticationPrincipal CustomUserDetails user,
+    public ResponseEntity<List<StorageInfoResponseDto>> search(@AuthenticationPrincipal CustomUserDetails user,
                                     @RequestParam("query") String query) {
         String backendPath = PathUtils.formatPathForBackend("", user.getId());
         List<StorageInfoResponseDto> searchResult = fileSystemService.searchElements(backendPath, query, user.getId());
@@ -68,7 +68,7 @@ public class ResourceController {
     }
 
     @GetMapping("/resource/move")
-    public ResponseEntity<?> move(@RequestParam("from") String pathFrom,
+    public ResponseEntity<StorageInfoResponseDto> move(@RequestParam("from") String pathFrom,
                                   @RequestParam("to") String pathTo,
                                   @AuthenticationPrincipal CustomUserDetails user){
         String backendPathFrom = PathUtils.formatPathForBackend(pathFrom, user.getId());
@@ -78,7 +78,7 @@ public class ResourceController {
 
 
     @PostMapping("/resource")
-    public ResponseEntity<?> upload(@RequestParam("path") String path,
+    public ResponseEntity<List<StorageInfoResponseDto>> upload(@RequestParam("path") String path,
                                     @RequestParam("object") MultipartFile[] file,
                                     @AuthenticationPrincipal CustomUserDetails user) {
         String backendPath = PathUtils.formatPathForBackend(path, user.getId());
@@ -86,7 +86,7 @@ public class ResourceController {
     }
 
     @DeleteMapping("/resource")
-    public ResponseEntity<?> delete(@RequestParam("path") String path,
+    public ResponseEntity<String> delete(@RequestParam("path") String path,
                                     @AuthenticationPrincipal CustomUserDetails user) {
         String backendPath = PathUtils.formatPathForBackend(path, user.getId());
         fileSystemService.delete(backendPath, user.getId());

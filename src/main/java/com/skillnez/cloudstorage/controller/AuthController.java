@@ -39,20 +39,20 @@ public class AuthController {
     //todo сделать обработку ошибок
 
     @PostMapping("/sign-in")
-    public ResponseEntity<?> signIn(@RequestBody @Valid UserSignInRequestDto userSignInRequestDto,
+    public ResponseEntity<Map<String, String>> signIn(@RequestBody @Valid UserSignInRequestDto userSignInRequestDto,
                                     HttpServletRequest request, HttpServletResponse response) {
         return authenticateUser(userSignInRequestDto.getUsername(), userSignInRequestDto.getPassword(), request, response);
     }
 
     @PostMapping("/sign-up")
-    public ResponseEntity<?> signUp(@RequestBody @Valid UserRegistrationRequestDto registrationRequestDto,
+    public ResponseEntity<Map<String, String>> signUp(@RequestBody @Valid UserRegistrationRequestDto registrationRequestDto,
                                     HttpServletRequest request, HttpServletResponse response) {
         userService.registerUser(registrationRequestDto);
         return authenticateUser(registrationRequestDto.getUsername(),
                 registrationRequestDto.getPassword(), request, response);
     }
 
-    private ResponseEntity<?> authenticateUser(String username, String password, HttpServletRequest request,
+    private ResponseEntity<Map<String, String>> authenticateUser(String username, String password, HttpServletRequest request,
                                                HttpServletResponse response) {
         Authentication authentication = authenticationManager
                 .authenticate(new UsernamePasswordAuthenticationToken(username, password));
