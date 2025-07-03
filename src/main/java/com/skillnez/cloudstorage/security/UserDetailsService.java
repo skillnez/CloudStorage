@@ -38,6 +38,8 @@ public class UserDetailsService implements org.springframework.security.core.use
         if (user == null) {
             throw new UsernameNotFoundException("User with username " + username + " not found");
         }
-        return new CustomUserDetails(user.getId(), user.getUsername(), user.getPassword(), user.isEnabled(), user.isAccountNonExpired(), user.isCredentialsNonExpired(), user.isAccountNonLocked(), getAuthorities(user.getRoles()));
+        return new CustomUserDetails(user.getId(),user.getUsername(), user.getPassword(),
+                user.isEnabled(), user.isAccountNonExpired(),
+                user.isCredentialsNonExpired(), user.isAccountNonLocked(), getAuthorities(user.getRoles()));
     }
 }

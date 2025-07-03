@@ -5,6 +5,7 @@ import com.skillnez.cloudstorage.dto.UserSignInRequestDto;
 import com.skillnez.cloudstorage.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -38,13 +39,13 @@ public class AuthController {
     //todo сделать обработку ошибок
 
     @PostMapping("/sign-in")
-    public ResponseEntity<?> signIn(@RequestBody UserSignInRequestDto userSignInRequestDto,
+    public ResponseEntity<?> signIn(@RequestBody @Valid UserSignInRequestDto userSignInRequestDto,
                                     HttpServletRequest request, HttpServletResponse response) {
         return authenticateUser(userSignInRequestDto.getUsername(), userSignInRequestDto.getPassword(), request, response);
     }
 
     @PostMapping("/sign-up")
-    public ResponseEntity<?> signUp(@RequestBody UserRegistrationRequestDto registrationRequestDto,
+    public ResponseEntity<?> signUp(@RequestBody @Valid UserRegistrationRequestDto registrationRequestDto,
                                     HttpServletRequest request, HttpServletResponse response) {
         userService.registerUser(registrationRequestDto);
         return authenticateUser(registrationRequestDto.getUsername(),

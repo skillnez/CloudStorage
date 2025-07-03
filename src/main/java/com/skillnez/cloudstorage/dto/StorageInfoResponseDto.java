@@ -19,7 +19,8 @@ public class StorageInfoResponseDto {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         StorageInfoResponseDto that = (StorageInfoResponseDto) o;
-        return Objects.equals(path, that.path) && Objects.equals(name, that.name) && Objects.equals(size, that.size) && type == that.type;
+        return Objects.equals(path, that.path) && Objects.equals(name, that.name)
+               && Objects.equals(size, that.size) && type == that.type;
     }
 
     @Override

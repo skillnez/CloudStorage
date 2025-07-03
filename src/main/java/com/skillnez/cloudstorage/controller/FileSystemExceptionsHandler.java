@@ -3,6 +3,7 @@ package com.skillnez.cloudstorage.controller;
 import com.skillnez.cloudstorage.exception.BadPathFormatException;
 import com.skillnez.cloudstorage.exception.FolderAlreadyExistsException;
 import com.skillnez.cloudstorage.exception.NoParentFolderException;
+import com.skillnez.cloudstorage.exception.UploadErrorException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -32,6 +33,11 @@ public class FileSystemExceptionsHandler {
     @ExceptionHandler(NoParentFolderException.class)
     public ResponseEntity<?> handleNoParentFolderException(NoParentFolderException e) {
         return ResponseEntity.status(404).body(Map.of("message", e.getMessage()));
+    }
+
+    @ExceptionHandler(UploadErrorException.class)
+    public ResponseEntity<?> handleUploadErrorException(UploadErrorException e) {
+        return ResponseEntity.status(500).body(Map.of("message", e.getMessage()));
     }
 
 

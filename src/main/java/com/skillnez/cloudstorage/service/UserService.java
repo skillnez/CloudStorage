@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
+@Transactional
 public class UserService {
 
     private final UserRepository userRepository;
@@ -25,7 +26,6 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    @Transactional
     protected UserRegistrationResponseDto saveUser(UserRegistrationRequestDto userRegistrationRequestDto) throws ConstraintViolationException {
         User user = new User();
         user.setUsername(userRegistrationRequestDto.getUsername());
@@ -39,13 +39,12 @@ public class UserService {
         return new UserRegistrationResponseDto(user.getId(), user.getUsername());
     }
 
-
-    @Transactional
-    public UserRegistrationResponseDto registerUser(UserRegistrationRequestDto userRegistrationRequestDto) throws UserAlreadyExistsException {
+    public void registerUser(UserRegistrationRequestDto userRegistrationRequestDto) throws UserAlreadyExistsException {
         try {
-            return saveUser(userRegistrationRequestDto);
+            saveUser(userRegistrationRequestDto);
         } catch (ConstraintViolationException e) {
-            throw new UserAlreadyExistsException("Account with this username " + userRegistrationRequestDto.getUsername() + " already exists");
+            throw new UserAlreadyExistsException("Account with this username "
+                                                 + userRegistrationRequestDto.getUsername() + " already exists");
         }
     }
 }

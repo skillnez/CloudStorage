@@ -20,7 +20,12 @@ public class CustomUserDetails implements org.springframework.security.core.user
     private final List<GrantedAuthority> authorities;
     private String password;
 
-    public CustomUserDetails(Long id, String username, String password, boolean enabled, boolean accountNonExpired, boolean credentialsNonExpired, boolean accountNonLocked, List<GrantedAuthority> authorities) {
+    public CustomUserDetails(Long id, String username, String password,
+                             boolean enabled,
+                             boolean accountNonExpired,
+                             boolean credentialsNonExpired,
+                             boolean accountNonLocked,
+                             List<GrantedAuthority> authorities) {
         this.id = id;
         this.username = username;
         this.password = password;

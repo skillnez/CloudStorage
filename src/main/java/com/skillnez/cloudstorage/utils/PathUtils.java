@@ -59,7 +59,7 @@ public class PathUtils {
 
     public static String normalizePath(String path) {
         if (path.matches(".*[:*?\"<>|].*")) {
-            throw new BadPathFormatException("path cannot contain ':  *  ?  \"  <  >  |'");
+            throw new BadPathFormatException("Path cannot contain ':  *  ?  \"  <  >  |'");
         }
         String cleaned = removeTrailingSlash(path);
         if (cleaned.contains("..")) {

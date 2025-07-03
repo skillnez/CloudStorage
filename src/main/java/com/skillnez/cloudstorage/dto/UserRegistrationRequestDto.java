@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
+@PasswordMatches
 public class UserRegistrationRequestDto {
 
     @NotBlank(message = "Account name can't be blank")
@@ -19,9 +20,9 @@ public class UserRegistrationRequestDto {
 
     @NotBlank(message = "Password can't be blank")
     @Size(min = 4, max = 64, message = "Password must be at least 4 and no more than 64 characters")
-    @Pattern(regexp = "^[a-zA-Z0-9!@#$%^&*()_+\\-={}|\\[\\]:;\"'<>,.?/~`]+$", message = "Password can contain only letters, digits and special characters without spaces")
+    @Pattern(regexp = "^[a-zA-Z0-9!@#$%^&*()_+\\-={}|\\[\\]:;\"'<>,.?/~`]+$",
+            message = "Password can contain only letters, digits and special characters without spaces")
     private String password;
 
     private String repeatPassword;
-
 }

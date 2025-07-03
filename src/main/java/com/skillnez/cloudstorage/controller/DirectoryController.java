@@ -4,11 +4,14 @@ import com.skillnez.cloudstorage.dto.StorageInfoResponseDto;
 import com.skillnez.cloudstorage.entity.CustomUserDetails;
 import com.skillnez.cloudstorage.service.FileSystemService;
 import com.skillnez.cloudstorage.utils.PathUtils;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+@Validated
 @RestController
 @RequestMapping("/api")
 public class DirectoryController {
@@ -20,7 +23,8 @@ public class DirectoryController {
     }
 
     @GetMapping("/directory")
-    public ResponseEntity<?> getStorageInfo(@AuthenticationPrincipal CustomUserDetails user, @RequestParam String path) {
+    public ResponseEntity<?> getStorageInfo(@AuthenticationPrincipal CustomUserDetails user,
+                                            @RequestParam String path) {
         Long userId = user.getId();
         String backendPath = PathUtils.formatPathForBackend(path, userId);
         return ResponseEntity.ok(fileSystemService.getElementsInFolder(backendPath, userId));

@@ -1,9 +1,7 @@
 package com.skillnez.cloudstorage.service;
 
-import com.skillnez.cloudstorage.dto.StorageInfoResponseDto;
 import com.skillnez.cloudstorage.exception.MinioOperationException;
 import com.skillnez.cloudstorage.utils.FolderTraversalMode;
-import com.skillnez.cloudstorage.utils.PathUtils;
 import io.minio.*;
 import io.minio.errors.ErrorResponseException;
 import io.minio.errors.MinioException;
@@ -40,7 +38,7 @@ public class MinioClientService {
                                     .build())
                             .build());
         } catch (IOException | GeneralSecurityException | MinioException e) {
-            throw new MinioOperationException("Object listing error", e);
+            throw new MinioOperationException("Object copy error: ", e);
         }
     }
 
@@ -54,7 +52,7 @@ public class MinioClientService {
                             .stream(file, fileSize, -1)
                             .contentType(contentType).build());
         } catch (IOException | GeneralSecurityException | MinioException e) {
-            throw new MinioOperationException("folder creation error: " + backendPath, e);
+            throw new MinioOperationException("Object put error: " + backendPath, e);
         }
     }
 
@@ -69,7 +67,7 @@ public class MinioClientService {
         } catch (ErrorResponseException e) {
             throw e;
         } catch (IOException | GeneralSecurityException | MinioException e) {
-            throw new MinioOperationException("Unexpected minio error", e);
+            throw new MinioOperationException("Object stat error: ", e);
         }
     }
 
@@ -81,7 +79,7 @@ public class MinioClientService {
                             .object(backendPath)
                             .build());
         } catch (IOException | GeneralSecurityException | MinioException e) {
-            throw new MinioOperationException("Object listing error: " + backendPath, e);
+            throw new MinioOperationException("Object get error: " + backendPath, e);
         }
     }
 
@@ -93,7 +91,7 @@ public class MinioClientService {
                             .object(backendPath)
                             .build());
         } catch (IOException | GeneralSecurityException | MinioException e) {
-            throw new MinioOperationException("removing has ended ", e);
+            throw new MinioOperationException("Object remove error: ", e);
         }
     }
 
