@@ -7,6 +7,7 @@ import com.skillnez.cloudstorage.utils.PathUtils;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.apache.commons.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Paths;
 import java.util.List;
 
@@ -59,11 +61,12 @@ public class ResourceController {
             fileSystemService.downloadFolder(backendPath, user.getId(), response.getOutputStream());
             ResponseEntity.ok().build();
         } else {
-            InputStreamResource downloadStream = fileSystemService.downloadFile(backendPath, user.getId());
-            ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + Paths.get(backendPath).getFileName() + "\"")
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .body(downloadStream);
+            try (InputStream downloadStream = fileSystemService.downloadFile(backendPath, user.getId())) {
+                response.setContentType("application/octet-stream");
+                response.setHeader("Content-Disposition", "attachment; filename=\"" + Paths.get(backendPath).getFileName() + "\"");
+                IOUtils.copy(downloadStream, response.getOutputStream());
+                response.flushBuffer();
+            }
         }
     }
 

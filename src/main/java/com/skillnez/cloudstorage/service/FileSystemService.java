@@ -162,16 +162,15 @@ public class FileSystemService {
         return moveOrRenameFile(backendPathFrom, backendPathTo, userId);
     }
 
-    public InputStreamResource downloadFile(String backendPath, Long userId) {
+    public InputStream downloadFile(String backendPath, Long userId) {
         if (!isFileOrFolderExists(backendPath) && !backendPath.equals("user-" + userId + "-files/")) {
             throw new NoParentFolderException("Path does not exist");
         }
-        InputStream downloadStream;
-        downloadStream = minioClientService.getObject(backendPath);
+        InputStream downloadStream = minioClientService.getObject(backendPath);
         if (downloadStream == null) {
             throw new NoSuchElementException("No element found");
         }
-        return new InputStreamResource(downloadStream);
+        return downloadStream;
     }
 
     public void downloadFolder(String backendPath, Long userId, OutputStream outputStream) {
