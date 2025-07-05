@@ -2,6 +2,7 @@ package com.skillnez.cloudstorage;
 
 import com.skillnez.cloudstorage.dto.UserRegistrationRequestDto;
 import com.skillnez.cloudstorage.entity.User;
+import com.skillnez.cloudstorage.exception.UserAlreadyExistsException;
 import com.skillnez.cloudstorage.repository.UserRepository;
 import com.skillnez.cloudstorage.service.UserService;
 import jakarta.transaction.Transactional;
@@ -44,7 +45,7 @@ class UserServiceIntegrationTest {
                 "skillnez", "password", "password"
         );
         userService.registerUser(userRegistrationRequestDto);
-        Assertions.assertThrows(DataIntegrityViolationException.class, () -> {userService.registerUser(userRegistrationRequestDto);});
+        Assertions.assertThrows(UserAlreadyExistsException.class, () -> {userService.registerUser(userRegistrationRequestDto);});
     }
 
     @Test

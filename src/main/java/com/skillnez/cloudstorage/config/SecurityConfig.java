@@ -65,12 +65,14 @@ public class SecurityConfig {
                         .requestMatchers("/", "/index.html", "/config.js", "/assets/**", "/login", "/registration", "/files/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll())
                 .formLogin(AbstractHttpConfigurer::disable).httpBasic(AbstractHttpConfigurer::disable)
-                .logout(logout -> logout.logoutUrl("/api/auth/sign-out").logoutSuccessHandler((req, res, auth) -> res.setStatus(HttpServletResponse.SC_NO_CONTENT)))
+                .logout(logout -> logout.logoutUrl("/api/auth/sign-out")
+                        .logoutSuccessHandler((req, res, auth) -> res.setStatus(HttpServletResponse.SC_NO_CONTENT)))
                 .exceptionHandling(eh -> eh.authenticationEntryPoint((request, response, authException) -> {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.setContentType("application/json");
                     response.getWriter().write("{\"message\":\"user not authenticated\"}");
-                })).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)).cors(cors -> cors.configurationSource(corsConfigurationSource()));
+                })).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()));
         return http.build();
     }
 
