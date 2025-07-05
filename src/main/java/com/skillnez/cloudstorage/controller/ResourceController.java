@@ -20,6 +20,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.List;
 
@@ -61,9 +63,11 @@ public class ResourceController {
             fileSystemService.downloadFolder(backendPath, user.getId(), response.getOutputStream());
             ResponseEntity.ok().build();
         } else {
+            String originalName = Paths.get(backendPath).getFileName().toString();
+            String encodedName = URLEncoder.encode(originalName, StandardCharsets.UTF_8).replace("+", "%20");
             try (InputStream downloadStream = fileSystemService.downloadFile(backendPath, user.getId())) {
                 response.setContentType("application/octet-stream");
-                response.setHeader("Content-Disposition", "attachment; filename=\"" + Paths.get(backendPath).getFileName() + "\"");
+                response.setHeader("Content-Disposition", "attachment; filename=\"" + encodedName + "\"");
                 IOUtils.copy(downloadStream, response.getOutputStream());
                 response.flushBuffer();
             }
