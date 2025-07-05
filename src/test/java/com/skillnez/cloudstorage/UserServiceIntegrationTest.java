@@ -32,8 +32,7 @@ class UserServiceIntegrationTest {
     @Test
     public void shouldRegisterUser() {
         UserRegistrationRequestDto userRegistrationRequestDto = new UserRegistrationRequestDto(
-                "skillnez", "password", "password"
-        );
+                "skillnez", "password");
         userService.registerUser(userRegistrationRequestDto);
         User user = userRepository.findByUsername(userRegistrationRequestDto.getUsername());
         Assertions.assertEquals(userRegistrationRequestDto.getUsername(), user.getUsername());
@@ -42,8 +41,7 @@ class UserServiceIntegrationTest {
     @Test
     public void shouldNotRegisterDuplicateUser() {
         UserRegistrationRequestDto userRegistrationRequestDto = new UserRegistrationRequestDto(
-                "skillnez", "password", "password"
-        );
+                "skillnez", "password");
         userService.registerUser(userRegistrationRequestDto);
         Assertions.assertThrows(UserAlreadyExistsException.class, () -> {userService.registerUser(userRegistrationRequestDto);});
     }
@@ -51,8 +49,7 @@ class UserServiceIntegrationTest {
     @Test
     public void passwordShouldBeEncoded() {
         UserRegistrationRequestDto userRegistrationRequestDto = new UserRegistrationRequestDto(
-                "skillnez", "password", "password"
-        );
+                "skillnez", "password");
         userService.registerUser(userRegistrationRequestDto);
         User user = userRepository.findByUsername(userRegistrationRequestDto.getUsername());
         Assertions.assertNotEquals(userRegistrationRequestDto.getPassword(), user.getPassword());
@@ -61,8 +58,7 @@ class UserServiceIntegrationTest {
     @Test
     public void userRoleShouldBeSpecified() {
         UserRegistrationRequestDto userRegistrationRequestDto = new UserRegistrationRequestDto(
-                "skillnez", "password", "password"
-        );
+                "skillnez", "password");
         userService.registerUser(userRegistrationRequestDto);
         User user = userRepository.findByUsername(userRegistrationRequestDto.getUsername());
         Assertions.assertEquals("ROLE_USER", user.getRoles().getFirst());

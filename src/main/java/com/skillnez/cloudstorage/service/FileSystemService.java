@@ -34,12 +34,17 @@ public class FileSystemService {
 
     private static final ByteArrayInputStream EMPTY_STREAM = new ByteArrayInputStream(new byte[]{});
     private static final String DEFAULT_CONTENT_TYPE = "application/octet-stream";
-    private static final Long FOLDER_SIZE = 0L;
+    private static final Long EMPTY_FOLDER_SIZE = 0L;
     private final MinioClientService minioClientService;
 
     @Autowired
     public FileSystemService(MinioClientService minioClientService) {
         this.minioClientService = minioClientService;
+    }
+
+    public void createRootFolder (Long userId) {
+        String userRootFolder = "user-" + userId + "-files/";
+        minioClientService.putObject(userRootFolder, EMPTY_STREAM, EMPTY_FOLDER_SIZE, DEFAULT_CONTENT_TYPE);
     }
 
     public StorageInfoResponseDto createFolder(String backendPath) {
@@ -53,7 +58,7 @@ public class FileSystemService {
             throw new NoParentFolderException("Parent folder does not exist");
         }
         log.info("Folder: {} created", backendPath);
-        minioClientService.putObject(backendPath, EMPTY_STREAM, FOLDER_SIZE, DEFAULT_CONTENT_TYPE);
+        minioClientService.putObject(backendPath, EMPTY_STREAM, EMPTY_FOLDER_SIZE, DEFAULT_CONTENT_TYPE);
         return PathUtils.formStorageInfoResponseDto(backendPath, null);
     }
 
@@ -77,7 +82,7 @@ public class FileSystemService {
                 for (int i = 0; i < pathPrefix.length - 1; i++) {
                     String currentPath = stringBuilder.append(pathPrefix[i]).append("/").toString();
                     if (!isFileOrFolderExists(currentPath)) {
-                        minioClientService.putObject(currentPath, EMPTY_STREAM, FOLDER_SIZE, DEFAULT_CONTENT_TYPE);
+                        minioClientService.putObject(currentPath, EMPTY_STREAM, EMPTY_FOLDER_SIZE, DEFAULT_CONTENT_TYPE);
                     }
                 }
                 minioClientService

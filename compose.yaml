@@ -33,7 +33,10 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - ./minio-data:/data
-
+  frontend:
+    image: cloud-frontend:1
+    ports:
+      - "80:80"
 volumes:
   postgres_data:
   minio_data:

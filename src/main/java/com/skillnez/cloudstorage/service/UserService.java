@@ -1,6 +1,7 @@
 package com.skillnez.cloudstorage.service;
 
 import com.skillnez.cloudstorage.dto.UserRegistrationRequestDto;
+import com.skillnez.cloudstorage.dto.UserRegistrationResponseDto;
 import com.skillnez.cloudstorage.entity.User;
 import com.skillnez.cloudstorage.exception.UserAlreadyExistsException;
 import com.skillnez.cloudstorage.repository.UserRepository;
@@ -26,7 +27,7 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    protected void saveUser(UserRegistrationRequestDto userRegistrationRequestDto) throws ConstraintViolationException {
+    protected UserRegistrationResponseDto saveUser(UserRegistrationRequestDto userRegistrationRequestDto) throws ConstraintViolationException {
         User user = new User();
         user.setUsername(userRegistrationRequestDto.getUsername());
         user.setPassword(passwordEncoder.encode(userRegistrationRequestDto.getPassword()));
@@ -35,12 +36,13 @@ public class UserService {
         user.setAccountNonLocked(true);
         user.setCredentialsNonExpired(true);
         user.setRoles(List.of("ROLE_USER"));
-        userRepository.save(user);
+        User savedUser = userRepository.save(user);
+        return new UserRegistrationResponseDto(user.getUsername(), user.getId());
     }
 
-    public void registerUser(UserRegistrationRequestDto userRegistrationRequestDto) throws UserAlreadyExistsException {
+    public UserRegistrationResponseDto registerUser(UserRegistrationRequestDto userRegistrationRequestDto) throws UserAlreadyExistsException {
         try {
-            saveUser(userRegistrationRequestDto);
+            return saveUser(userRegistrationRequestDto);
         } catch (DataIntegrityViolationException e) {
             throw new UserAlreadyExistsException("Account with this username "
                                                  + userRegistrationRequestDto.getUsername() + " already exists");
